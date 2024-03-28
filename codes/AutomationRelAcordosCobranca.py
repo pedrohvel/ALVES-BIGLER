@@ -7,28 +7,32 @@ from reportlab.lib.enums import TA_CENTER
 import pandas as pd
 
 # Função para criar e salvar o PDF para cada cliente
+
+
 def criar_pdf_para_cliente(cliente, dados_cliente):
     # Definindo o tamanho da página paisagem com dimensões personalizadas
-    width, height = landscape((30*inch, 10*inch))  # Tamanho personalizado
-    
+    width, height = landscape((45*inch, 8*inch))  # Tamanho personalizado
+
     # Ajustando a largura das colunas para se ajustarem ao novo tamanho da página
     num_cols = len(dados_cliente.columns)
-    col_width = width / num_cols
-    
+    # Ajustando para a largura da página menos 100 unidades para margem
+    col_width = (width - 100) / num_cols
+
     # Definindo o estilo da tabela e do texto
     style_sheet = getSampleStyleSheet()
     estilo_tabela = style_sheet['BodyText']
     estilo_tabela.alignment = TA_CENTER
     estilo_cabecalho = style_sheet['Title']
     estilo_cabecalho.alignment = TA_CENTER
-    
+
     # Definindo o estilo da fonte e tamanho
     fonte = 'Helvetica'
     tamanho_fonte = 8  # Reduzindo o tamanho da fonte
-    
+
     # Criando o arquivo PDF
     pdf_output_path = f'relatorio_{cliente}.pdf'
-    pdf = SimpleDocTemplate(pdf_output_path, pagesize=landscape((30*inch, 10*inch)))  # Tamanho personalizado
+    pdf = SimpleDocTemplate(pdf_output_path, pagesize=landscape(
+        (45*inch, 8*inch)))  # Tamanho personalizado
 
     # Criando uma lista para armazenar os dados da tabela
     table_data = []
@@ -41,7 +45,11 @@ def criar_pdf_para_cliente(cliente, dados_cliente):
         table_data.append(row.tolist())
 
     # Criando a tabela com os dados
-    table = Table(table_data, colWidths=[col_width] * num_cols)
+    # Ajustando os tamanhos das colunas CARTEIRA e NOME
+    col_width_cart = col_width * 1.4  # Ajuste de largura para a coluna CARTEIRA
+    col_width_nome = col_width * 1.4  # Ajuste de largura para a coluna NOME
+    table = Table(table_data, colWidths=[
+                  col_width_cart, col_width_nome] + [col_width] * (num_cols - 2))
 
     # Aplicando estilos à tabela
     table.setStyle(TableStyle([('BACKGROUND', (0, 0), (-1, 0), colors.black),
@@ -50,11 +58,14 @@ def criar_pdf_para_cliente(cliente, dados_cliente):
                                ('FONTNAME', (0, 0), (-1, 0), fonte),
                                ('FONTSIZE', (0, 0), (-1, -1), tamanho_fonte),
                                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                               ('BACKGROUND', (0, 1), (-1, -1), colors.white),  # Cor de fundo branco para os dados
-                               ('GRID', (0, 0), (-1, -1), 1, colors.black)]))  # Adicionando bordas
+                               # Cor de fundo branco para os dados
+                               ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+                               # Adicionando bordas
+                               ('GRID', (0, 0), (-1, -1), 1, colors.black)]))
 
     # Adicionando a tabela ao PDF
     pdf.build([table])
+
 
 # Leitura do arquivo Excel original
 excel_file_path = r'C:\\Users\\mateu\\OneDrive\\Documents\\DOCUMENTOS , FAMILIA , CURRICULO\\BM Finance Group\\Alves&Bigler\\Rel de Acordos  Cobrança 12.03.2024 a 20.03.2024 - JUA CONDOMINIO.xlsx'
@@ -70,6 +81,6 @@ clientes = df['CARTEIRA'].unique()
 for cliente in clientes:
     # Filtragem dos dados por cliente
     dados_cliente = df[df['CARTEIRA'] == cliente]
-    
+
     # Criando e salvando o PDF para o cliente atual
     criar_pdf_para_cliente(cliente, dados_cliente)
