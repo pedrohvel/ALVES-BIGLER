@@ -1,50 +1,75 @@
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import landscape, letter
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import inch
+from reportlab.lib.enums import TA_CENTER
 import pandas as pd
-from reportlab.lib.pagesizes import landscape, inch
-from reportlab.pdfgen import canvas
 
-# Passo 1: Leitura do Excel
-df = pd.read_excel(r'C:\\Users\mateu\OneDrive\Documents\DOCUMENTOS , FAMILIA , CURRICULO\BM Finance Group\Alves&Bigler\Rel de Acordos  Cobrança 12.03.2024 a 20.03.2024 - JUA CONDOMINIO.xlsx', header=10)
+# Função para criar e salvar o PDF para cada cliente
+def criar_pdf_para_cliente(cliente, dados_cliente):
+    # Definindo o tamanho da página paisagem com dimensões personalizadas
+    width, height = landscape((30*inch, 10*inch))  # Tamanho personalizado
+    
+    # Ajustando a largura das colunas para se ajustarem ao novo tamanho da página
+    num_cols = len(dados_cliente.columns)
+    col_width = width / num_cols
+    
+    # Definindo o estilo da tabela e do texto
+    style_sheet = getSampleStyleSheet()
+    estilo_tabela = style_sheet['BodyText']
+    estilo_tabela.alignment = TA_CENTER
+    estilo_cabecalho = style_sheet['Title']
+    estilo_cabecalho.alignment = TA_CENTER
+    
+    # Definindo o estilo da fonte e tamanho
+    fonte = 'Helvetica'
+    tamanho_fonte = 8  # Reduzindo o tamanho da fonte
+    
+    # Criando o arquivo PDF
+    pdf_output_path = f'relatorio_{cliente}.pdf'
+    pdf = SimpleDocTemplate(pdf_output_path, pagesize=landscape((30*inch, 10*inch)))  # Tamanho personalizado
 
-# Passo 2: Tratamento de dados vazios (se necessário)
+    # Criando uma lista para armazenar os dados da tabela
+    table_data = []
+
+    # Adicionando cabeçalhos à lista
+    table_data.append(dados_cliente.columns.tolist())
+
+    # Adicionando os dados à lista
+    for _, row in dados_cliente.iterrows():
+        table_data.append(row.tolist())
+
+    # Criando a tabela com os dados
+    table = Table(table_data, colWidths=[col_width] * num_cols)
+
+    # Aplicando estilos à tabela
+    table.setStyle(TableStyle([('BACKGROUND', (0, 0), (-1, 0), colors.black),
+                               ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                               ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                               ('FONTNAME', (0, 0), (-1, 0), fonte),
+                               ('FONTSIZE', (0, 0), (-1, -1), tamanho_fonte),
+                               ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                               ('BACKGROUND', (0, 1), (-1, -1), colors.white),  # Cor de fundo branco para os dados
+                               ('GRID', (0, 0), (-1, -1), 1, colors.black)]))  # Adicionando bordas
+
+    # Adicionando a tabela ao PDF
+    pdf.build([table])
+
+# Leitura do arquivo Excel original
+excel_file_path = r'C:\\Users\\mateu\\OneDrive\\Documents\\DOCUMENTOS , FAMILIA , CURRICULO\\BM Finance Group\\Alves&Bigler\\Rel de Acordos  Cobrança 12.03.2024 a 20.03.2024 - JUA CONDOMINIO.xlsx'
+df = pd.read_excel(excel_file_path, header=10)
+
+# Tratamento de dados vazios (se necessário)
 df.fillna(value='', inplace=True)
 
-# Obter cabeçalhos do Excel
-cabeçalhos_excel = list(df.columns)
-
-# Passo 3: Iteração sobre os clientes
+# Obtendo a lista de clientes
 clientes = df['CARTEIRA'].unique()
 
+# Salvando os dados de cada cliente em um PDF separado
 for cliente in clientes:
-    # Passo 4: Filtragem dos dados por cliente
+    # Filtragem dos dados por cliente
     dados_cliente = df[df['CARTEIRA'] == cliente]
-
-    # Passo 5: Geração de relatório em PDF
-    nome_arquivo = f"relatorio_{cliente}.pdf"
-
-    # Definindo o tamanho da página como paisagem e dimensões personalizadas
-    width, height = 45*inch, 12*inch  # Largura e altura em polegadas
-    pagesize = landscape((width, height))
-
-    # Criando o arquivo PDF com as dimensões personalizadas
-    c = canvas.Canvas(nome_arquivo, pagesize=pagesize)
-
-    # Escreva os cabeçalhos no PDF
-    y = 700  # Posição inicial (para ajustar conforme necessário)
-    x = 50  # Posição horizontal (para ajustar conforme necessário)
-    for cabeçalho in cabeçalhos_excel:
-        c.drawString(x, y, cabeçalho)
-        x += 180  # Espaço entre cabeçalhos (para ajustar conforme necessário)
-
-    # Escreva os dados no PDF
-    y -= 20  # Espaço entre cabeçalhos e dados (para ajustar conforme necessário)
-    for index, row in dados_cliente.iterrows():
-        x = 50  # Reiniciar a posição horizontal para os dados
-        for coluna in cabeçalhos_excel:
-            c.drawString(x, y, str(row[coluna]))
-            x += 180  # Espaço entre colunas (para ajustar conforme necessário)
-        y -= 20  # Espaço entre linhas (para ajustar conforme necessário)
-
-    c.save()
-
-    # Passo 6: Salvar o relatório
-    print(f"Relatório para {cliente} gerado com sucesso: {nome_arquivo}")
+    
+    # Criando e salvando o PDF para o cliente atual
+    criar_pdf_para_cliente(cliente, dados_cliente)
