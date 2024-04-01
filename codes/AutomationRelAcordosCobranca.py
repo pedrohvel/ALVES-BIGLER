@@ -7,12 +7,10 @@ from reportlab.lib.enums import TA_CENTER
 import pandas as pd
 
 # Função para criar e salvar o PDF para cada cliente
-
-
 def criar_pdf_para_cliente(cliente, dados_cliente):
     # Definindo o tamanho da página paisagem com dimensões personalizadas
     width, height = landscape((45*inch, 8*inch))  # Tamanho personalizado
-
+    
     # Ajustando a largura das colunas para se ajustarem ao novo tamanho da página
     num_cols = len(dados_cliente.columns)
     # Ajustando para a largura da página menos 100 unidades para margem
@@ -24,15 +22,14 @@ def criar_pdf_para_cliente(cliente, dados_cliente):
     estilo_tabela.alignment = TA_CENTER
     estilo_cabecalho = style_sheet['Title']
     estilo_cabecalho.alignment = TA_CENTER
-
+    
     # Definindo o estilo da fonte e tamanho
     fonte = 'Helvetica'
     tamanho_fonte = 8  # Reduzindo o tamanho da fonte
 
     # Criando o arquivo PDF
     pdf_output_path = f'relatorio_{cliente}.pdf'
-    pdf = SimpleDocTemplate(pdf_output_path, pagesize=landscape(
-        (45*inch, 8*inch)))  # Tamanho personalizado
+    pdf = SimpleDocTemplate(pdf_output_path, pagesize=landscape((45*inch, 8*inch)))  # Tamanho personalizado
 
     # Criando uma lista para armazenar os dados da tabela
     table_data = []
@@ -40,16 +37,15 @@ def criar_pdf_para_cliente(cliente, dados_cliente):
     # Adicionando cabeçalhos à lista
     table_data.append(dados_cliente.columns.tolist())
 
-    # Adicionando os dados à lista
+    # Adicionando os dados à lista, formatando os números float para duas casas decimais
     for _, row in dados_cliente.iterrows():
-        table_data.append(row.tolist())
+        row_data = [f'{val:.2f}' if isinstance(val, float) else val for val in row.tolist()]
+        table_data.append(row_data)
 
     # Criando a tabela com os dados
-    # Ajustando os tamanhos das colunas CARTEIRA e NOME
     col_width_cart = col_width * 1.4  # Ajuste de largura para a coluna CARTEIRA
     col_width_nome = col_width * 1.4  # Ajuste de largura para a coluna NOME
-    table = Table(table_data, colWidths=[
-                  col_width_cart, col_width_nome] + [col_width] * (num_cols - 2))
+    table = Table(table_data, colWidths=[col_width_cart, col_width_nome] + [col_width] * (num_cols - 2))
 
     # Aplicando estilos à tabela
     table.setStyle(TableStyle([('BACKGROUND', (0, 0), (-1, 0), colors.black),
@@ -58,10 +54,8 @@ def criar_pdf_para_cliente(cliente, dados_cliente):
                                ('FONTNAME', (0, 0), (-1, 0), fonte),
                                ('FONTSIZE', (0, 0), (-1, -1), tamanho_fonte),
                                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                               # Cor de fundo branco para os dados
-                               ('BACKGROUND', (0, 1), (-1, -1), colors.white),
-                               # Adicionando bordas
-                               ('GRID', (0, 0), (-1, -1), 1, colors.black)]))
+                               ('BACKGROUND', (0, 1), (-1, -1), colors.white),  # Cor de fundo branco para os dados
+                               ('GRID', (0, 0), (-1, -1), 1, colors.black)]))  # Adicionando bordas
 
     # Adicionando a tabela ao PDF
     pdf.build([table])
